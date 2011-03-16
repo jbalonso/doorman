@@ -14,8 +14,8 @@ const int  cs=6; // RTC chip select
  * A simple web server that shows the value of the analog input pins.
  */
 
-#include "WiFly.h"
-#include "_Spi.h" // borrow the SPI library used in WiFly
+#include <WiFly.h>
+#include <_Spi.h> // borrow the SPI library used in WiFly
 
 Server server(80);
 SpiDevice rtc_spi;
