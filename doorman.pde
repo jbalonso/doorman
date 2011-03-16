@@ -16,6 +16,7 @@ const int  cs=6; // RTC chip select
 
 #include <WiFly.h>
 #include <_Spi.h> // borrow the SPI library used in WiFly
+#include <TrueRandom.h>
 
 Server server(80);
 SpiDevice rtc_spi;
@@ -30,6 +31,9 @@ void setup() {
   Serial.begin(9600);
   Serial.println("doorman booting...");
   WiFly.begin();
+  
+  Serial.println("seeding random number generator...");
+  randomSeed(TrueRandom.random());
   
   Serial.println("loading wifi credentials...");
   char* _essid = get_from_addr( ADDR_WIFI_ESSID, essid );
