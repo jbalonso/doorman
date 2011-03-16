@@ -1,0 +1,15 @@
+Key exchange
+============
+M_exchange = {cmd, timestamp, nonce}
+k_sign = HMAC(M_exchange, k_shared)
+S_exchange = HMAC(M_exchange, k_sign)
+
+Send: M_exchange, S_exchange
+
+
+Timestamps
+==========
+
+Instead of sending complete timestamps with every message, send a ticket timestamp and its age. This permits the use of the real time clock without having to compute deltas on the arduino.
+
+The arduino would send its timestamp and a nonce to establish a session. The server should accept or reject the message depending on its age. If it accepts, it should reply with a current timestamp to update the real time clock. Messages should use ticket age (as measured by a change in millis() on the arduino) as a timestamp for message authentication.
