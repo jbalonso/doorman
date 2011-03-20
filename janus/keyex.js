@@ -4,7 +4,7 @@ var crypto = require('crypto');
 function keyex(m_exchange, k_shared, algorithm) {
     // Default algorithm is sha256
     algorithm = algorithm || 'sha256';
-    var format = 'base64'; // binary
+    var format = 'hex';
 
     // Compute the signing key
     var hmac = crypto.createHmac(algorithm, k_shared);
