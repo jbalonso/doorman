@@ -14,11 +14,16 @@
 #include <_Spi.h> // borrow the SPI library used in WiFly
 #include <TrueRandom.h>
 #include "rtc.h"
+#include "packet.h"
+#include "sha1.h"
 
 Server server(80);
 
 char essid[63];
 char passphrase[63];
+char secret[] = "1234567890123456789012345678901234567890123456789012345678901234";
+
+SecurePacketSender sps;
 
 void setup() {  
   Serial.begin(9600);
@@ -45,14 +50,17 @@ void setup() {
   } else {
     Serial.println("wifi credentials not found!");
   }
+  
+  Serial.println("initializing security engine...");
+  sps.begin(secret, 64);
 
   wifly_mode = SPCR;
   rtc_mode = (SPCR & ~SPI_MODE_MASK) | SPI_MODE1;
   
+  Serial.println("initializing RTC...");
   RTC_init();
-  Serial.println("RTC initialized");
-
   
+  Serial.println("launching server...");
   server.begin();
 }
 
@@ -65,6 +73,7 @@ void loop() {
     // an http request ends with a blank line
     boolean current_line_is_blank = true;
     while (client.connected()) {
+      sps.set_client(&client);
       if (client.available()) {
         char c = client.read();
         // if we've gotten to the end of the line (received a newline
@@ -78,15 +87,16 @@ void loop() {
           
           // output the value of each analog input pin
           for (int i = 0; i < 6; i++) {
-            client.print("analog input ");
-            client.print(i);
-            client.print(" is ");
-            client.print(analogRead(i));
-            client.println("<br />");
-            client.print("time is ");
+            sps.print("analog input ");
+            sps.print(i);
+            sps.print(" is ");
+            sps.print(analogRead(i));
+            sps.println("<br />");
+            sps.print("time is ");
             //client.print(timestamp);
-            client.print(ReadTimeDate());
-            client.println("<br />");
+            sps.print(ReadTimeDate());
+            sps.println("<br />");
+            sps.sign();
 
           }
           break;
