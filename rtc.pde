@@ -105,7 +105,7 @@ String ReadTimeDate(){
 			}
 	}
         temp += millis();
-        sprintf(buf, "%04u-%02u%02u-%02u%02u%02u",
+        sprintf(buf, "%04u-%02u%02u-%02u%02u.%02u",
                 (1900 + TimeDate[6]),
                 TimeDate[5],
                 TimeDate[4],
