@@ -20,8 +20,8 @@
 Server server(4269);
 RTC rtc;
 
-char essid[63];
-char passphrase[63];
+char essid[33];  // 63
+char passphrase[33];
 char secret[] = "1234567890123456789012345678901234567890123456789012345678901234";
 
 Packet pkt;
