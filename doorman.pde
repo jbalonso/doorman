@@ -24,8 +24,8 @@ char essid[63];
 char passphrase[63];
 char secret[] = "1234567890123456789012345678901234567890123456789012345678901234";
 
-SecurePacketSender sps;
-
+Packet pkt;
+boolean keyed;
 void setup() {  
   Serial.begin(9600);
   Serial.println("doorman booting...");
@@ -52,11 +52,12 @@ void setup() {
     Serial.println("wifi credentials not found!");
   }
   
-  Serial.println("initializing security engine...");
-  sps.begin(secret, 64);
-
   Serial.println("initializing RTC...");
   rtc.begin(6);
+
+  Serial.println("initializing security engine...");
+  pkt.begin(&rtc, secret, 64);
+  keyed = false;
   
   Serial.println("launching server...");
   server.begin();
@@ -68,49 +69,33 @@ void loop() {
   
   Client client = server.available();
   if (client) {
-    // an http request ends with a blank line
-    boolean current_line_is_blank = true;
     while (client.connected()) {
-      sps.set_client(&client);
+      pkt.set_client(&client);
       if (client.available()) {
         char c = client.read();
-        // if we've gotten to the end of the line (received a newline
-        // character) and the line is blank, the http request has ended,
-        // so we can send a reply
-        if (c == '\n' && current_line_is_blank) {
-          // send a standard http response header
-          client.println("HTTP/1.1 200 OK");
-          client.println("Content-Type: text/html");
-          client.println();
-          
-          // output the value of each analog input pin
-          for (int i = 0; i < 6; i++) {
-            sps.print("analog input ");
-            sps.print(i);
-            sps.print(" is ");
-            sps.print(analogRead(i));
-            sps.println("<br />");
-            sps.print("time is ");
-            //client.print(timestamp);
-            sps.print(ReadTimeDate());
-            sps.println("<br />");
-            sps.sign();
-
+        if( pkt.parse_char(c) ) {
+          if( pkt.packet_ready ) client.println("accepted!");
+          else {
+            client.println("rejected!");
+            if( !keyed ) {
+              // Rekey if not already done
+              pkt.rekey();
+              keyed = true;
+            } else {
+              strcpy(pkt.cmd, "PING");
+              strcpy(pkt.args, "");
+              pkt.timestamp();
+              pkt.send();
+            }
           }
-          break;
-        }
-        if (c == '\n') {
-          // we're starting a new line
-          current_line_is_blank = true;
-        } else if (c != '\r') {
-          // we've gotten a character on the current line
-          current_line_is_blank = false;
+            
         }
       }
     }
     // give the web browser time to receive the data
     delay(100);
     client.stop();
+    keyed = false;
   }
   
   /*rtc.GetDateTime();
