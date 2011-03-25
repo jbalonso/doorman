@@ -17,7 +17,7 @@
 #include "packet.h"
 #include "sha1.h"
 
-Server server(80);
+Server server(4269);
 
 char essid[63];
 char passphrase[63];
