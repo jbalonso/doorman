@@ -18,6 +18,7 @@
 #include "sha1.h"
 
 Server server(4269);
+RTC rtc;
 
 char essid[63];
 char passphrase[63];
@@ -54,11 +55,8 @@ void setup() {
   Serial.println("initializing security engine...");
   sps.begin(secret, 64);
 
-  wifly_mode = SPCR;
-  rtc_mode = (SPCR & ~SPI_MODE_MASK) | SPI_MODE1;
-  
   Serial.println("initializing RTC...");
-  RTC_init();
+  rtc.begin(6);
   
   Serial.println("launching server...");
   server.begin();
@@ -193,15 +191,15 @@ void set_datetime() {
     _sdt_datetime[_ss_field-1] = atoi(_sdt_parse);
     _ss_field++;
     if( _ss_field == 7 ) {
-      SetTimeDate(
-        _sdt_datetime[1],
-        _sdt_datetime[0],
-        _sdt_datetime[2] + 100,
-        _sdt_datetime[3],
-        _sdt_datetime[4],
-        _sdt_datetime[5] );
-      Serial.println("clock set");
-      _ss_field = 0;
+        rtc.year = _sdt_datetime[2] + 100;
+        rtc.month = _sdt_datetime[0];
+        rtc.day = _sdt_datetime[1];
+        rtc.hour = _sdt_datetime[3];
+        rtc.minute = _sdt_datetime[4];
+        rtc.second = _sdt_datetime[5];
+        rtc.SetTimeDate();
+        Serial.println("clock set");
+        _ss_field = 0;
     }
   }
 }

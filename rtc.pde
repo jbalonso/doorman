@@ -1,39 +1,33 @@
 #include <SPI.h>
 #include <stdio.h>
 
-const int  cs=6; // RTC chip select 
+#include "rtc.h"
 
-#include <_Spi.h> // borrow the SPI library used in WiFly
+RTC::RTC() {}
 
-SpiDevice rtc_spi;
-
-byte rtc_mode, wifly_mode;
-
-//=====================================
-int RTC_init(){ 
+void RTC::begin(int cs_pin) { 
+  // Save configuration parameters
+  cs = cs_pin;
+  other_mode = SPCR;
+  
+  // Initialize the SPI framework
   rtc_spi.begin(cs);
+  rtc_mode = (SPCR & ~SPI_MODE_MASK) | SPI_MODE1;
+  
+  // Configure the RTC device
   SPCR = rtc_mode;
   rtc_spi.select();
   rtc_spi.transfer(0x8E);
   rtc_spi.transfer(0x60);
   rtc_spi.deselect();
-  SPCR = wifly_mode;
+  SPCR = other_mode;
+  
+  // Pause
   delay(10);
-	  //pinMode(cs,OUTPUT); // chip select
-	  // start the SPI library:
-	  //SPI.begin();
-	  //SPI.setBitOrder(MSBFIRST); 
-	  //SPI.setDataMode(SPI_MODE1); // both mode 1 & 3 should work 
-	  //set control register 
-	  //digitalWrite(cs, LOW);  
-	  //SPI.transfer(0x8E);
-	  //SPI.transfer(0x60); //60= disable Osciallator and Battery SQ wave @1hz, temp compensation, Alarms disabled
-	  //digitalWrite(cs, HIGH);
-	  //delay(10);
 }
-//=====================================
-int SetTimeDate(int d, int mo, int y, int h, int mi, int s){ 
-	int TimeDate [7]={s,mi,h,0,d,mo,y};
+
+void RTC::SetTimeDate(){ 
+	int TimeDate [7]={second,minute,hour,0,day,month,year};
         SPCR = rtc_mode;
 	for(int i=0; i<=6;i++){
 		if(i==3)
@@ -53,31 +47,23 @@ int SetTimeDate(int d, int mo, int y, int h, int mi, int s){
 		rtc_spi.transfer(i+0x80); 
 		rtc_spi.transfer(TimeDate[i]);
                 rtc_spi.deselect();
-		//digitalWrite(cs, LOW);
-		//SPI.transfer(i+0x80); 
-		//SPI.transfer(TimeDate[i]);        
-		//digitalWrite(cs, HIGH);
         }
-        SPCR = wifly_mode;
+        SPCR = other_mode;
 }
 //=====================================
-String ReadTimeDate(){
+void RTC::GetTimeDate(){
 	int TimeDate [7]; //second,minute,hour,null,day,month,year		
-        String temp;
-        char buf[17];
 	for(int i=0; i<=6;i++){
 		if(i==3)
 			i++;
+
                 SPCR = rtc_mode;
                 rtc_spi.select();
 		rtc_spi.transfer(i+0x00); 
 		unsigned int n = rtc_spi.transfer(0x00);        
 		rtc_spi.deselect();
-                SPCR = wifly_mode;
-		//digitalWrite(cs, LOW);
-		//SPI.transfer(i+0x00); 
-		//unsigned int n = SPI.transfer(0x00);        
-		//digitalWrite(cs, HIGH);
+                SPCR = other_mode;
+                
 		int a=n & B00001111;    
 		if(i==2){	
 			int b=(n & B00110000)>>4; //24 hour mode
@@ -104,27 +90,26 @@ String ReadTimeDate(){
 			TimeDate[i]=a+b*10;	
 			}
 	}
-        temp += millis();
-        sprintf(buf, "%04u-%02u%02u-%02u%02u.%02u",
-                (1900 + TimeDate[6]),
-                TimeDate[5],
-                TimeDate[4],
-                TimeDate[2],
-                TimeDate[1],
-                TimeDate[0]);
-        temp += ": ";
-        temp += buf;
-        /*
-	temp += TimeDate[5];
-	temp += "/" ;
-	temp += TimeDate[4];
-	temp += "/";
-	temp += 1900L + TimeDate[6];
-	temp += " ";
-	temp += TimeDate[2];
-	temp += ":";
-	temp += TimeDate[1];
-	temp += ":";
-	temp += TimeDate[0];*/
-        return temp;
+
+        // Record time data
+        year = TimeDate[6];
+        month = TimeDate[5];
+        day = TimeDate[4];
+        hour = TimeDate[2];
+        minute = TimeDate[1];
+        second = TimeDate[0];
+}
+
+const char* RTC::GetTimeStamp() {
+  GetTimeDate();
+  sprintf(buf, "%04u-%02u%02u-%02u%02u.%02u",
+          (1900 + year),
+          month,
+          day,
+          hour,
+          minute,
+          second);
+  buf[17] = '\0';
+  last_timestamp = buf;
+  return buf;
 }
