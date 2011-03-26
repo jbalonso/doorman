@@ -11,7 +11,8 @@
 Client client((const char*) NULL, 4269);
 RTC rtc;
 
-char essid[33];  // 63
+// EEPROM parameters
+char essid[33];
 char passphrase[33];
 const char server[] = "jalonso-laptop.jayst";
 const int secret_len = 64;
