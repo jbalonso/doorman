@@ -111,37 +111,22 @@ void Packet::reset() {
 
 boolean Packet::verify() {
   // Verify session
-  Serial.println("Verifying session...");
   if( memcmp( session, _rtc->last_timestamp, 18 ) ) return false;
   
   // Accept only master-role messages
-  Serial.println("Verifying role...");
   if( role != 'M' ) return false;
   
   // Determine if the signature age is acceptible
-  Serial.println("Verifying signature age...");
   unsigned long time = millis() - _offset;
   unsigned long age = time - offset;
   if( age > max_signature_age ) return false;
   
   // Determine if the session age is acceptible
-  Serial.println("Verifying session age...");
   // FIXME=================================================================
   
   // Verify signature
-  Serial.println("Verifying signature...");
+  // FIXME: THIS ROUTINE IS VULNERABLE TO SIDE CHANNEL ATTACKS!
   int i;
-  for (i=0; i<20; i++) {
-    Serial.print("0123456789abcdef"[signature_check[i]>>4]);
-    Serial.print("0123456789abcdef"[signature_check[i]&0xf]);
-  }
-  Serial.println();
-  for (i=0; i<20; i++) {
-    Serial.print(signature[2*i]);
-    Serial.print(signature[2*i+1]);
-  }
-  Serial.println();
-  
   for (i=0; i<20; i++) {
     if( signature[2*i]   != ("0123456789abcdef"[signature_check[i]>>4])  ) return false;
     if( signature[2*i+1] != ("0123456789abcdef"[signature_check[i]&0xf]) ) return false;
