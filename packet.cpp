@@ -161,9 +161,9 @@ boolean Packet::parse_char(const char in_byte) {
       break;
     case 3:
       recv_hash.write(in_byte);
-      if( in_byte == ';' ) { field++; field_pos = 0; }
+      if( in_byte == ';' ) { field++; cmd[field_pos] = '\0'; field_pos = 0; }
       else {
-        if( field_pos >= max_cmd_len ) break;
+        if( field_pos >= max_cmd_len - 1 ) break;
         cmd[field_pos++] = in_byte;
       }
       break;
@@ -171,11 +171,12 @@ boolean Packet::parse_char(const char in_byte) {
       if( in_byte == ';' ) {
         signature_check = recv_hash.resultHmac();
         field++;
+        args[field_pos] = '\0';
         field_pos = 0;
       }
       else {
         recv_hash.write(in_byte);
-        if( field_pos >= max_args_len ) break;
+        if( field_pos >= max_args_len - 1 ) break;
         args[field_pos++] = in_byte;
       }
       break;
