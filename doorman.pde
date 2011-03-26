@@ -89,6 +89,7 @@ void loop() {
           if( pkt.packet_ready ) { 
             if( 0 == strcmp(pkt.cmd, "PING") ) send_ping();
             else if( 0 == strcmp(pkt.cmd, "OPEN") ) do_open();
+            else if( 0 == strcmp(pkt.cmd, "TIME") ) do_time();
           }
         }
     }
@@ -122,6 +123,17 @@ void do_open() {
   strcpy(pkt.cmd, "OPEN");
   pkt.timestamp();
   pkt.send();
+}
+
+void do_time() {
+  int field = 1;
+  int pos = 0;
+  
+  for( int i=0; pkt.args[i]; i++ )
+    set_datetime(&field, &pos, pkt.args[i]);
+    
+  pkt.rekey();
+  keyed = true;
 }
 
 int _ss_field = 0;
