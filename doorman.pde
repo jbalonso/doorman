@@ -90,6 +90,7 @@ void loop() {
             if( 0 == strcmp(pkt.cmd, "PING") ) send_ping();
             else if( 0 == strcmp(pkt.cmd, "OPEN") ) do_open();
             else if( 0 == strcmp(pkt.cmd, "TIME") ) do_time();
+            else if( 0 == strcmp(pkt.cmd, "PANIC") ) do_panic();
           }
         }
     }
@@ -134,6 +135,16 @@ void do_time() {
     
   pkt.rekey();
   keyed = true;
+}
+
+void do_panic() {
+  strcpy(pkt.cmd, "PANIC");
+  strcpy(pkt.args, "");
+  pkt.timestamp();
+  pkt.send();
+  Serial.println("PANIC received: engaging lockout.");
+  delay(1000);
+  while(1);
 }
 
 int _ss_field = 0;
