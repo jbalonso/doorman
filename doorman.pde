@@ -79,19 +79,16 @@ void loop() {
       if (client.available()) {
         char c = client.read();
         if( pkt.parse_char(c) ) {
-          if( pkt.packet_ready ) client.println("accepted!");
+          if( pkt.packet_ready ) { 
+            if( 0 == strcmp(pkt.cmd, "PING") ) send_ping();
+          }
           else {
             client.println("rejected!");
             if( !keyed ) {
               // Rekey if not already done
               pkt.rekey();
               keyed = true;
-            } else {
-              strcpy(pkt.cmd, "PING");
-              strcpy(pkt.args, "");
-              pkt.timestamp();
-              pkt.send();
-            }
+            } else send_ping();
           }
             
         }
@@ -113,6 +110,13 @@ void loop() {
     if( !was_connected && ++retries > retries_before_reset ) wifly_init();
     if( was_connected ) retries = 0;
   }
+}
+
+void send_ping() {
+  strcpy(pkt.cmd, "PING");
+  strcpy(pkt.args, "");
+  pkt.timestamp();
+  pkt.send();
 }
 
 int _ss_field = 0;
