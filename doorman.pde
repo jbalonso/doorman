@@ -134,9 +134,9 @@ void service_serial() {
   if( Serial.available() > 0 ) {
     if( _ss_field > 0 && _ss_field <= 6 ) set_datetime();
     else if( _ss_field == 7 ) read_str_into_eeprom(ADDR_WIFI_ESSID, essid, "Setting ESSID: ");
-    else if( _ss_field == 8 ) read_str_into_eeprom(ADDR_WIFI_SECRET, passphrase, "Setting network passphrase: ");
+    else if( _ss_field == 8 ) read_str_into_eeprom(ADDR_WIFI_SECRET, passphrase, "Setting network Passphrase: ");
     else if( _ss_field == 9 ) set_secret();
-    else if( _ss_field == 10 ) read_str_into_eeprom(ADDR_SERVER_NAME, server, "Setting host Name: ");
+    else if( _ss_field == 10 ) read_str_into_eeprom(ADDR_SERVER_NAME, server, "Setting server Hostname: ");
     else {
       switch( Serial.read() ) {
         case 'T':  _ss_field = 1; break;  // set Time
@@ -210,7 +210,7 @@ void set_secret() {
       Serial.println("ERROR: secret underflow");
     else {
       // Save to EEPROM
-      Serial.println("Setting shared secret");
+      Serial.println("Setting shared Secret");
       write_to_addr(ADDR_HMAC_SECRET, secret, secret_len);
       keyed = false;
     }
