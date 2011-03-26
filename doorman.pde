@@ -20,6 +20,10 @@ const int max_server_len = 32;
 char server[max_server_len];
 const int retries_before_reset = 16;
 
+// Configuration parameters
+const byte cs_rtc = 6;
+const byte relay_pin = 5;
+
 
 Packet pkt;
 boolean keyed;
@@ -35,12 +39,16 @@ void setup() {
   wifly_init();
   
   Serial.println("initializing RTC...");
-  rtc.begin(6);
+  rtc.begin(cs_rtc);
 
   Serial.println("initializing security engine...");
   get_from_addr( ADDR_HMAC_SECRET, secret );
   pkt.begin(&rtc, secret, secret_len);
   keyed = false;
+  
+  // Configure the relay
+  digitalWrite(relay_pin, LOW);
+  pinMode(relay_pin, OUTPUT);
   
   Serial.println("connecting to server...");
   char* srv_addr = get_from_addr( ADDR_SERVER_NAME, server );
@@ -123,7 +131,27 @@ void send_ping() {
 
 // Open the door
 void do_open() {
+  // Parse the duration
+  int duration = atoi(pkt.args);
+  if( duration == 0 ) duration = 2000;
+  
+  // Confirm open, keeping args from incoming packet
   strcpy(pkt.cmd, "OPEN");
+  pkt.timestamp();
+  pkt.send();
+  
+  // Unlock
+  digitalWrite(relay_pin, HIGH);
+  
+  // Wait for specified duration
+  delay(duration);
+  
+  // Lock
+  digitalWrite(relay_pin, LOW);
+  
+  // Confirm close
+  strcpy(pkt.cmd, "CLOSE");
+  strcpy(pkt.args, "");
   pkt.timestamp();
   pkt.send();
 }
@@ -140,7 +168,8 @@ void do_time() {
   keyed = true;
 }
 
-// Engage emergency lockout (manual reset will be required)
+// Engage emergency lockout and require manual reset
+// (This is intended for cases of shared secret compromise)
 void do_panic() {
   strcpy(pkt.cmd, "PANIC");
   strcpy(pkt.args, "");
