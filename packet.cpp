@@ -119,7 +119,7 @@ boolean Packet::verify() {
   // Determine if the signature age is acceptible
   unsigned long time = millis() - _offset;
   unsigned long age = time - offset;
-  if( age > max_signature_age ) return false;
+  if( age > max_signature_age && -age > max_signature_age ) return false;
   
   // Determine if the session age is acceptible
   // FIXME=================================================================
