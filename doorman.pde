@@ -90,15 +90,6 @@ void loop() {
             if( 0 == strcmp(pkt.cmd, "PING") ) send_ping();
             else if( 0 == strcmp(pkt.cmd, "OPEN") ) do_open();
           }
-          else {
-            client.println("rejected!");
-            if( !keyed ) {
-              // Rekey if not already done
-              pkt.rekey();
-              keyed = true;
-            } else send_ping();
-          }
-            
         }
     }
   } else {
