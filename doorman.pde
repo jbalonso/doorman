@@ -1,15 +1,6 @@
 #include <SPI.h>
 
 #include "eeprom_config.h"
-
-/*
- * Web Server
- *
- * (Based on Ethernet's WebServer Example)
- *
- * A simple web server that shows the value of the analog input pins.
- */
-
 #include <WiFly.h>
 #include <_Spi.h> // borrow the SPI library used in WiFly
 #include <TrueRandom.h>
@@ -120,15 +111,6 @@ void loop() {
     if( !was_connected && ++retries > retries_before_reset ) wifly_init();
     if( was_connected ) retries = 0;
   }
-  
-  /*rtc.GetDateTime();
-  String temp;
-  Serial.print(rtc.hour); Serial.print(':'); Serial.print(rtc.minute); Serial.print(':'); Serial.print(rtc.second);
-  Serial.print(' ');
-  Serial.print(rtc.month); Serial.print('/'); Serial.print(rtc.day); Serial.print('/');  Serial.print(rtc.year);
-  Serial.println(temp);*/
-  //Serial.println(ReadTimeDate());
-  //delay(1000);
 }
 
 int _ss_field = 0;
