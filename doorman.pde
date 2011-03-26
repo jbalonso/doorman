@@ -78,6 +78,11 @@ void loop() {
   service_serial();
 
   if( was_connected && client.connected() ) { 
+      // Rekey if appropriate
+      if( !keyed || pkt.key_expired() ) {
+        pkt.rekey();
+        keyed = true;
+      }
       if (client.available()) {
         char c = client.read();
         if( pkt.parse_char(c) ) {

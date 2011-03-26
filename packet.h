@@ -8,7 +8,8 @@ const int signature_len = 20;
 const int session_secret_len = signature_len;
 const int max_cmd_len = 8;
 const int max_args_len = 32;
-const unsigned long max_signature_age = 500;
+const unsigned long max_signature_age = 500;            // 500 ms
+const unsigned long max_key_age = (10L*60L*60L*1000L);  // 10 hours
 
 class SecurePacketSender : public Print {
   public:
@@ -16,6 +17,7 @@ class SecurePacketSender : public Print {
     void begin( RTC* _rtc, const char* secret, int secret_len );
     void set_client(Client*);
     void sign();
+    boolean key_expired() { return max_key_age < (millis() - _offset); }
     virtual void write(uint8_t datum);
     using Print::write;
     
