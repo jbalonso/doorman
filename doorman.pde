@@ -128,7 +128,7 @@ int _ss_field = 0;
 int _ss_char = 0;
 void service_serial() {
   if( Serial.available() > 0 ) {
-    if( _ss_field > 0 && _ss_field <= 6 ) set_datetime();
+    if( _ss_field > 0 && _ss_field <= 6 ) set_datetime(&_ss_field, &_ss_char, Serial.read());
     else if( _ss_field == 7 ) read_str_into_eeprom(ADDR_WIFI_ESSID, essid, "Setting ESSID: ");
     else if( _ss_field == 8 ) read_str_into_eeprom(ADDR_WIFI_SECRET, passphrase, "Setting network Passphrase: ");
     else if( _ss_field == 9 ) set_secret();
@@ -172,13 +172,13 @@ byte _sdt_datetime[] = {0, 0, 0, 0, 0, 0}; // MM DD YYY, HH MM SS
 char _sdt_parse[] = {'\0', '\0', '\0'};
 
 // Tmmddyyhhmmss
-void set_datetime() {
-  _sdt_parse[_ss_char++] = Serial.read();
-  if( _ss_char == 2 ) {
-    _ss_char = 0;
-    _sdt_datetime[_ss_field-1] = atoi(_sdt_parse);
-    _ss_field++;
-    if( _ss_field == 7 ) {
+void set_datetime(int* field, int* pos, char in_char) {
+  _sdt_parse[(*pos)++] = in_char;
+  if( *pos == 2 ) {
+    *pos = 0;
+    _sdt_datetime[*field-1] = atoi(_sdt_parse);
+    (*field)++;
+    if( *field == 7 ) {
         rtc.year = _sdt_datetime[2] + 100;
         rtc.month = _sdt_datetime[0];
         rtc.day = _sdt_datetime[1];
@@ -187,7 +187,7 @@ void set_datetime() {
         rtc.second = _sdt_datetime[5];
         rtc.SetTimeDate();
         Serial.println("clock set");
-        _ss_field = 0;
+        *field = 0;
     }
   }
 }
