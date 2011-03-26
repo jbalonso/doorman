@@ -13,8 +13,9 @@ RTC rtc;
 
 char essid[33];  // 63
 char passphrase[33];
-char secret[] = "1234567890123456789012345678901234567890123456789012345678901234";
 const char server[] = "jalonso-laptop.jayst";
+const int secret_len = 64;
+char secret[secret_len];
 const int retries_before_reset = 16;
 
 
@@ -35,7 +36,8 @@ void setup() {
   rtc.begin(6);
 
   Serial.println("initializing security engine...");
-  pkt.begin(&rtc, secret, 64);
+  get_from_addr( ADDR_HMAC_SECRET, secret );
+  pkt.begin(&rtc, secret, secret_len);
   keyed = false;
   
   Serial.println("connecting to server...");
@@ -120,6 +122,7 @@ void service_serial() {
     if( _ss_field > 0 && _ss_field <= 6 ) set_datetime();
     else if( _ss_field == 7 ) set_essid();
     else if( _ss_field == 8 ) set_passphrase();
+    else if( _ss_field == 9 ) set_secret();
     else {
       switch( Serial.read() ) {
         case 'T':  _ss_field = 1; break;  // set Time
@@ -193,3 +196,56 @@ void set_datetime() {
     }
   }
 }
+
+void set_secret() {
+  // Read the hexadecimal character
+  char c = Serial.read();
+  
+  // Skip spaces
+  if( c == ' ' || c == '\r' ) return;
+  
+  // Terminate on carriage return
+  if( c == '\n' ) {
+    // Make sure the full secret has been received
+    if( _ss_char != 2*secret_len )
+      Serial.println("ERROR: secret underflow");
+    else {
+      // Save to EEPROM
+      Serial.println("Setting shared secret");
+      write_to_addr(ADDR_HMAC_SECRET, secret, secret_len);
+      keyed = false;
+    }
+
+    // Reset
+    _ss_char = 0;
+    _ss_field = 0;
+    return;
+  }
+  
+  // Warn if secret is full
+  if( _ss_char >= 2*secret_len ) {
+    Serial.println("ERROR: secret overflow");
+    _ss_char = 0;
+    _ss_field = 0;
+    return;
+  }
+  
+  // Compute the index and offset of the secret
+  byte idx = _ss_char / 2;
+  byte offset = 1 - (_ss_char % 2);  // High-order nybbles first
+  
+  // Convert the hexadecimal character into an integer
+  byte val = 0;
+  if( c >= 'a' ) val = 10 + c - 'a';
+  else if( c >= 'A' ) val = 10 + c - 'A';
+  else val = c - '0';
+  
+  // Update the secret accordingly
+  byte mask = 0x0f << (offset * 4);
+  secret[idx] &= ~mask;
+  secret[idx] |= val << (offset * 4);
+  
+  // Advance the index
+  _ss_char++;
+}
+
