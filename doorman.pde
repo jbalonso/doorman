@@ -133,8 +133,8 @@ int _ss_char = 0;
 void service_serial() {
   if( Serial.available() > 0 ) {
     if( _ss_field > 0 && _ss_field <= 6 ) set_datetime();
-    else if( _ss_field == 7 ) set_essid();
-    else if( _ss_field == 8 ) set_passphrase();
+    else if( _ss_field == 7 ) read_str_into_eeprom(ADDR_WIFI_ESSID, essid, "Setting ESSID: ");
+    else if( _ss_field == 8 ) read_str_into_eeprom(ADDR_WIFI_SECRET, passphrase, "Setting network passphrase: ");
     else if( _ss_field == 9 ) set_secret();
     else if( _ss_field == 10 ) read_str_into_eeprom(ADDR_SERVER_NAME, server, "Setting host Name: ");
     else {
@@ -147,44 +147,6 @@ void service_serial() {
         default: Serial.println("Unknown command");
       }
     }
-  }
-}
-
-void set_essid() {
-  essid[_ss_char++] = Serial.read();
-  
-  // Terminate on carriage return
-  if( essid[_ss_char-1] == '\r' ) {
-    // String should be null-terminated
-    essid[_ss_char] = 0;
-    
-    // Save to EEPROM
-    write_to_addr(ADDR_WIFI_ESSID, essid, _ss_char);
-    Serial.print( "Setting ESSID: " );
-    Serial.println( essid );
-
-    // Reset
-    _ss_char = 0;
-    _ss_field = 0;
-  }
-}
-
-void set_passphrase() {
-  passphrase[_ss_char++] = Serial.read();
-  
-  // Terminate on carriage return
-  if( passphrase[_ss_char-1] == '\r' ) {
-    // String should be null-terminated
-    passphrase[_ss_char] = 0;
-    
-    // Save to EEPROM
-    write_to_addr(ADDR_WIFI_SECRET, passphrase, _ss_char);
-    Serial.print( "Setting network passphrase: " );
-    Serial.println( passphrase );
-
-    // Reset
-    _ss_char = 0;
-    _ss_field = 0;
   }
 }
 
