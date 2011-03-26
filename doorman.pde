@@ -14,9 +14,10 @@ RTC rtc;
 // EEPROM parameters
 char essid[33];
 char passphrase[33];
-const char server[] = "jalonso-laptop.jayst";
 const int secret_len = 64;
 char secret[secret_len];
+const int max_server_len = 32;
+char server[max_server_len];
 const int retries_before_reset = 16;
 
 
@@ -42,10 +43,10 @@ void setup() {
   keyed = false;
   
   Serial.println("connecting to server...");
+  char* srv_addr = get_from_addr( ADDR_SERVER_NAME, server );
   pkt.set_client(&client);
-  was_connected = client.connect(server);
+  was_connected = client.connect(srv_addr);
   if( !was_connected ) client.stop();
-  
 }
 
 int retries;
@@ -135,12 +136,14 @@ void service_serial() {
     else if( _ss_field == 7 ) set_essid();
     else if( _ss_field == 8 ) set_passphrase();
     else if( _ss_field == 9 ) set_secret();
+    else if( _ss_field == 10 ) read_str_into_eeprom(ADDR_SERVER_NAME, server, "Setting host Name: ");
     else {
       switch( Serial.read() ) {
         case 'T':  _ss_field = 1; break;  // set Time
         case 'E':  _ss_field = 7; break;  // set Essid
         case 'P':  _ss_field = 8; break;  // set wireless Passphrase
         case 'S':  _ss_field = 9; break;  // set shared Secret
+        case 'H':  _ss_field = 10; break; // set Host
         default: Serial.println("Unknown command");
       }
     }
@@ -178,6 +181,28 @@ void set_passphrase() {
     write_to_addr(ADDR_WIFI_SECRET, passphrase, _ss_char);
     Serial.print( "Setting network passphrase: " );
     Serial.println( passphrase );
+
+    // Reset
+    _ss_char = 0;
+    _ss_field = 0;
+  }
+}
+
+void read_str_into_eeprom( uint16_t addr, char* dst, const char* msg ) {
+  // Read characters into buffer, ignoring line feeds
+  char c = Serial.read();
+  if( c == '\r' ) return;
+  dst[_ss_char++] = c;
+  
+  // Terminate on carriage return
+  if( dst[_ss_char-1] == '\n' ) {
+    // String should be null-terminated
+    dst[_ss_char-1] = 0;
+    
+    // Save to EEPROM
+    write_to_addr(addr, dst, _ss_char);
+    Serial.print( msg );
+    Serial.println( dst );
 
     // Reset
     _ss_char = 0;
