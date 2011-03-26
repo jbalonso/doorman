@@ -113,6 +113,7 @@ void loop() {
   }
 }
 
+// Send a PING packet
 void send_ping() {
   strcpy(pkt.cmd, "PING");
   strcpy(pkt.args, "");
@@ -120,12 +121,14 @@ void send_ping() {
   pkt.send();
 }
 
+// Open the door
 void do_open() {
   strcpy(pkt.cmd, "OPEN");
   pkt.timestamp();
   pkt.send();
 }
 
+// Update the RTC
 void do_time() {
   int field = 1;
   int pos = 0;
@@ -137,6 +140,7 @@ void do_time() {
   keyed = true;
 }
 
+// Engage emergency lockout (manual reset will be required)
 void do_panic() {
   strcpy(pkt.cmd, "PANIC");
   strcpy(pkt.args, "");
