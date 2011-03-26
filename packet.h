@@ -6,7 +6,7 @@
 
 const int signature_len = 20;
 const int session_secret_len = signature_len;
-const int max_cmd_len = 6;
+const int max_cmd_len = 8;
 const int max_args_len = 32;
 const unsigned long max_signature_age = 500;
 
