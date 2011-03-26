@@ -81,6 +81,7 @@ void loop() {
         if( pkt.parse_char(c) ) {
           if( pkt.packet_ready ) { 
             if( 0 == strcmp(pkt.cmd, "PING") ) send_ping();
+            else if( 0 == strcmp(pkt.cmd, "OPEN") ) do_open();
           }
           else {
             client.println("rejected!");
@@ -115,6 +116,12 @@ void loop() {
 void send_ping() {
   strcpy(pkt.cmd, "PING");
   strcpy(pkt.args, "");
+  pkt.timestamp();
+  pkt.send();
+}
+
+void do_open() {
+  strcpy(pkt.cmd, "OPEN");
   pkt.timestamp();
   pkt.send();
 }
