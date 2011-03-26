@@ -17,15 +17,19 @@
 #include "packet.h"
 #include "sha1.h"
 
-Server server(4269);
+Client client((const char*) NULL, 4269);
 RTC rtc;
 
 char essid[33];  // 63
 char passphrase[33];
 char secret[] = "1234567890123456789012345678901234567890123456789012345678901234";
+const char server[] = "jalonso-laptop.jayst";
+const int retries_before_reset = 16;
+
 
 Packet pkt;
 boolean keyed;
+boolean was_connected;
 void setup() {  
   Serial.begin(9600);
   Serial.println("doorman booting...");
@@ -33,6 +37,26 @@ void setup() {
   
   Serial.println("seeding random number generator...");
   randomSeed(TrueRandom.random());
+  
+  wifly_init();
+  
+  Serial.println("initializing RTC...");
+  rtc.begin(6);
+
+  Serial.println("initializing security engine...");
+  pkt.begin(&rtc, secret, 64);
+  keyed = false;
+  
+  Serial.println("connecting to server...");
+  pkt.set_client(&client);
+  was_connected = client.connect(server);
+  if( !was_connected ) client.stop();
+  
+}
+
+int retries;
+void wifly_init() {
+  retries = 0;
   
   Serial.println("loading wifi credentials...");
   char* _essid = get_from_addr( ADDR_WIFI_ESSID, essid );
@@ -46,31 +70,19 @@ void setup() {
         delay(5000);
       } while( !WiFly.join(essid, passphrase) );
     }
+    WiFly.configure(WIFLY_BAUD, 38400);
     Serial.print("IP: ");
     Serial.println(WiFly.ip());
   } else {
     Serial.println("wifi credentials not found!");
   }
-  
-  Serial.println("initializing RTC...");
-  rtc.begin(6);
-
-  Serial.println("initializing security engine...");
-  pkt.begin(&rtc, secret, 64);
-  keyed = false;
-  
-  Serial.println("launching server...");
-  server.begin();
 }
 
 void loop() {
   //String timestamp = ReadTimeDate();
   service_serial();
-  
-  Client client = server.available();
-  if (client) {
-    while (client.connected()) {
-      pkt.set_client(&client);
+
+  if( was_connected && client.connected() ) { 
       if (client.available()) {
         char c = client.read();
         if( pkt.parse_char(c) ) {
@@ -90,12 +102,23 @@ void loop() {
           }
             
         }
-      }
     }
-    // give the web browser time to receive the data
-    delay(100);
-    client.stop();
+  } else {
+    // Reset connection information
+    Serial.println("lost connection...");
+    if( was_connected ) client.stop();
     keyed = false;
+    
+    // Wait
+    Serial.println("waiting...");
+    delay(1000);
+    
+    // Attempt connection to server
+    Serial.println("reconnecting...");
+    was_connected = client.connect(server);
+    if( !was_connected ) client.stop();
+    if( !was_connected && ++retries > retries_before_reset ) wifly_init();
+    if( was_connected ) retries = 0;
   }
   
   /*rtc.GetDateTime();
